@@ -20,3 +20,6 @@
 
 ?>
 
+<div class="<?php print $classes ?>" <?php print $attributes ?>>
+	HEJ
+</div>

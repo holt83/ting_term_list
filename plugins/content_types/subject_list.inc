@@ -22,12 +22,15 @@ $plugin = array(
 );
 
 function subject_list_render($subtype, $conf, $args, $context) {
-	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($context , TRUE), FILE_APPEND);
 	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
 	$scan_results = ting_subject_list_do_scan('arkitekter', 'subject', 100);
 	$block = new stdClass();
 	$block->title = 'Subject list';
-	$block->content = 'A little test line';
+	$block->content = array(
+		'#theme' => 'ting_subject_list_column',
+	);
+	$test = drupal_render($block->content);
+	//file_put_contents("/home/drupalpro/debug/debug.txt", print_r($test , TRUE), FILE_APPEND);
 	return $block;
 }
 

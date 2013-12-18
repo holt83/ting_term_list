@@ -41,6 +41,10 @@ function ting_subject_list_theme() {
 	);
 }
 
+function template_preprocess_ting_subject_list_column(&$variables) {
+	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($variables , TRUE), FILE_APPEND);
+}
+
 /**
  * Use OpenScan to search for keyword, check
  * http://oss.dbc.dk/twiki/bin/view/Databroend/OpenSearchDocIndexes
