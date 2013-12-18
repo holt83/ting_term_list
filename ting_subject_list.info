@@ -1,0 +1,10 @@
+name = Ting subject list
+description = Provides a list with ting subjects
+core = 7.x
+package = Ding!
+
+files[] = ting_subject_list.module
+
+dependencies[] = ctools
+dependencies[] = panels
+dependencies[] = ting

@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ *
+ * Module file for the Ting emne index module.
+ */
+
+/* Constants */
+define('TING_SUBJECT_LIST_PATH', drupal_get_path('module', 'ting_subject_list'));
+
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ting_subject_list_ctools_plugin_directory($owner, $plugin_type) {
+	if ($owner == 'ctools' && !empty($plugin_type)) {
+		return "plugins/$plugin_type";
+	}
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ting_subject_list_theme() {
+	return array(
+		'ting_subject_list_column' => array(
+			'variables' => array(
+				'items' => array(),
+			),
+			'template' => 'ting-subject-list-column',
+			'path' => TING_SUBJECT_LIST_PATH . '/templates',
+		),
+		'ting_subject_list_item' => array(
+			'variables' => array(
+				'item' => NULL,
+			),
+			'template' => 'ting-subject-list-item',
+			'path' => TING_SUBJECT_LIST_PATH . '/templates',
+		),
+	);
+}
+
+/**
+ * Use OpenScan to search for keyword, check
+ * http://oss.dbc.dk/twiki/bin/view/Databroend/OpenSearchDocIndexes
+ * for which phrase index to search, default is 'anyIndexes'
+ */
+function ting_subject_list_do_scan($query, $phrase = 'anyIndexes', $num_results = 10) {
+  $request = ting_get_request_factory()->getScanRequest();
+  $request->setField('phrase.' . $phrase);
+  $request->setLower($query);
+  $request = ting_add_agency($request);
+  $request->setNumResults($num_results);
+  $request->setMinFrequency(15000);
+  return ting_execute($request);
+}
