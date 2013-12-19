@@ -52,11 +52,11 @@ function ting_subject_list_theme() {
  * http://oss.dbc.dk/twiki/bin/view/Databroend/OpenSearchDocIndexes
  * for which phrase index to search, default is 'anyIndexes'
  */
-function ting_subject_list_do_scan($query, $phrase = 'anyIndexes', $num_results = 10) {
+function ting_subject_list_do_scan($lower, $phrase = 'anyIndexes', $num_results = 10) {
   $request = ting_get_request_factory()->getScanRequest();
   $request->setField('phrase.' . $phrase);
   $request->setLower($query);
-  $request = ting_add_agency($request);
+  $request = ting_add_agency($lower);
   $request->setNumResults($num_results);
   $request->setMinFrequency(15000);
   return ting_execute($request);
