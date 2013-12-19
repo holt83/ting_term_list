@@ -24,9 +24,15 @@ function ting_subject_list_ctools_plugin_directory($owner, $plugin_type) {
  */
 function ting_subject_list_theme() {
 	return array(
+		'ting-subject-list' => array(
+			'render element' => 'element',
+			'template' => 'ting-subject-list',
+			'path' => TING_SUBJECT_LIST_PATH . '/templates',
+		),
 		'ting_subject_list_column' => array(
 			'variables' => array(
-				'items' => array(),
+				'items' => NULL,
+				'column_title' => NULL,
 			),
 			'template' => 'ting-subject-list-column',
 			'path' => TING_SUBJECT_LIST_PATH . '/templates',
@@ -39,10 +45,6 @@ function ting_subject_list_theme() {
 			'path' => TING_SUBJECT_LIST_PATH . '/templates',
 		),
 	);
-}
-
-function template_preprocess_ting_subject_list_column(&$variables) {
-	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($variables , TRUE), FILE_APPEND);
 }
 
 /**
