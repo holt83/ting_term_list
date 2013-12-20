@@ -25,13 +25,13 @@
 <div class="<?php print $classes ?>" <?php print $attributes; ?>>
 	<?php if (isset($column_title)): ?>
 		<div class="column-header">
-			<?php print $title_prefix; ?>
+			<?php print render($title_prefix); ?>
 			<h3 <?php print $title_attributes; ?>> <?php print $column_title; ?></h3>
-			<?php print $title_suffix; ?>
+			<?php print render($title_suffix); ?>
 		</div>
 	<?php endif; ?>
 	<?php if (isset($items)): ?>
-		<div class="column-wrapper clearfix" <?php print $content_attributes; ?>>
+		<div class="column-wrapper" <?php print $content_attributes; ?>>
 			<?php print $items; ?>
 		</div>
 	<?php endif; ?>

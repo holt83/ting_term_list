@@ -25,7 +25,9 @@ function ting_subject_list_ctools_plugin_directory($owner, $plugin_type) {
 function ting_subject_list_theme() {
 	return array(
 		'ting-subject-list' => array(
-			'render element' => 'element',
+			'variables' => array(
+				'node' => NULL,
+			),
 			'template' => 'ting-subject-list',
 			'path' => TING_SUBJECT_LIST_PATH . '/templates',
 		),
@@ -55,8 +57,8 @@ function ting_subject_list_theme() {
 function ting_subject_list_do_scan($lower, $phrase = 'anyIndexes', $num_results = 10) {
   $request = ting_get_request_factory()->getScanRequest();
   $request->setField('phrase.' . $phrase);
-  $request->setLower($query);
-  $request = ting_add_agency($lower);
+  $request->setLower($lower);
+  $request = ting_add_agency($request);
   $request->setNumResults($num_results);
   $request->setMinFrequency(15000);
   return ting_execute($request);

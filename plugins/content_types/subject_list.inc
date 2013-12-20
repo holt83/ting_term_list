@@ -24,13 +24,18 @@ $plugin = array(
 function subject_list_render($subtype, $conf, $args, $context) {
 	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
 	$scan_results = ting_subject_list_do_scan('arkitekter', 'subject', 100);
+	// Get the node respresenting this subject list from the context.
+	$node = NULL;
+	if (!empty($context) && !empty($context->data)) {
+		$node = $context->data;
+	}
 	$block = new stdClass();
 	$block->title = 'Subject list';
 	$block->content = array(
 		'#theme' => 'ting_subject_list_column',
+		'#column_title' => 'Test column title',
 	);
-	$test = drupal_render($block->content);
-	//file_put_contents("/home/drupalpro/debug/debug.txt", print_r($test , TRUE), FILE_APPEND);
+	//file_put_contents("/home/drupalpro/debug/debug.txt", print_r($node , TRUE), FILE_APPEND);
 	return $block;
 }
 
