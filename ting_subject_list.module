@@ -52,7 +52,13 @@ function ting_subject_list_theme() {
 }
 
 /**
- * Use OpenSearch to retrieve Ting subjects from the data well.
+ * Fetch Ting subjects from the data well, by exploiting the facet search 
+ * option on OpenSearch webservice. 
+ *
+ * @param $query
+ *   A cql query string specifying the type of materials to search through.
+ * @param $num_resullt
+ *   The max number of results to return.
  */
 function ting_subject_list_get_subjects($query, $num_results = 100) {
 	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
@@ -62,15 +68,16 @@ function ting_subject_list_get_subjects($query, $num_results = 100) {
 	if ($agency = variable_get('ting_agency', FALSE)) {
 		$request->setAgency($agency);
 	}
-	// Start at first subject and step 1 forward
+	$profile = variable_get('ting_search_profile', '');
+	if (!empty($profile) && method_exists($request, 'setProfile')) {
+	  $request->setProfile($profile);
+	}
+	// Set defaults
 	$request->setStart(1);
 	$request->setNumResults(1);
 	$request->setFacets(array('facet.subject'));
+	// Set the number of subjects to return
 	$request->setNumFacets($num_results);
-  $profile = variable_get('ting_search_profile', '');
-  if (!empty($profile) && method_exists($request, 'setProfile')) {
-    $request->setProfile($profile);
-  }
 
 	$search_result = ting_execute($request);
 	return $search_result;

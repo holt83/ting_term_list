@@ -23,7 +23,7 @@ $plugin = array(
 
 function subject_list_render($subtype, $conf, $args, $context) {	
 	$result = ting_subject_list_get_subjects('bog');
-	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($result , TRUE), FILE_APPEND);
+		file_put_contents("/home/drupalpro/debug/debug.txt", print_r($result , TRUE), FILE_APPEND);
 	// Get the node respresenting this subject list from the context.
 	$node = NULL;
 	if (!empty($context) && !empty($context->data)) {
