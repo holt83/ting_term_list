@@ -23,43 +23,68 @@ function ting_subject_list_ctools_plugin_directory($owner, $plugin_type) {
  * Implements hook_theme().
  */
 function ting_subject_list_theme() {
+	$common = array(
+		'path' => TING_SUBJECT_LIST_PATH . '/theme',
+		'file' => 'theme.inc', 
+	);
 	return array(
-		'ting-subject-list' => array(
+		'ting_subject_list' => array(
 			'variables' => array(
-				'node' => NULL,
+				'subjects' => array(),
+				'column_count' => 3,
 			),
 			'template' => 'ting-subject-list',
-			'path' => TING_SUBJECT_LIST_PATH . '/templates',
-		),
+		) + $common,
 		'ting_subject_list_column' => array(
 			'variables' => array(
-				'items' => NULL,
+				'subjects' => array(),
 				'column_title' => NULL,
 			),
 			'template' => 'ting-subject-list-column',
-			'path' => TING_SUBJECT_LIST_PATH . '/templates',
-		),
-		'ting_subject_list_item' => array(
+		) + $common,
+		'ting_subject_list_subject' => array(
 			'variables' => array(
-				'item' => NULL,
+				'subject' => NULL,
 			),
-			'template' => 'ting-subject-list-item',
-			'path' => TING_SUBJECT_LIST_PATH . '/templates',
-		),
+			'template' => 'ting-subject-list-subject',
+		) + $common,
 	);
 }
 
 /**
- * Use OpenScan to search for keyword, check
- * http://oss.dbc.dk/twiki/bin/view/Databroend/OpenSearchDocIndexes
- * for which phrase index to search, default is 'anyIndexes'
+ * Use OpenSearch to retrieve Ting subjects from the data well.
  */
-function ting_subject_list_do_scan($lower, $phrase = 'anyIndexes', $num_results = 10) {
+function ting_subject_list_get_subjects($query, $num_results = 100) {
+	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
+
+	$request = ting_get_request_factory()->getSearchRequest();
+	$request->setQuery($query);
+	if ($agency = variable_get('ting_agency', FALSE)) {
+		$request->setAgency($agency);
+	}
+	// Start at first subject and step 1 forward
+	$request->setStart(1);
+	$request->setNumResults(1);
+	$request->setFacets(array('facet.subject'));
+	$request->setNumFacets($num_results);
+  $profile = variable_get('ting_search_profile', '');
+  if (!empty($profile) && method_exists($request, 'setProfile')) {
+    $request->setProfile($profile);
+  }
+
+	$search_result = ting_execute($request);
+	return $search_result;
+}
+
+/**
+ * Use OpenScan to retrieve Ting subjects from the data well.
+ */
+function ting_subject_list_do_scan($lower, $num_results = 60, $min_count = 50) {
+	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
   $request = ting_get_request_factory()->getScanRequest();
-  $request->setField('phrase.' . $phrase);
+  $request->setField('phrase.subject');
   $request->setLower($lower);
   $request = ting_add_agency($request);
-  $request->setNumResults($num_results);
-  $request->setMinFrequency(15000);
+  $request->setMinFrequency(1500);
   return ting_execute($request);
 }

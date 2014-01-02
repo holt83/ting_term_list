@@ -21,9 +21,9 @@ $plugin = array(
 	'category' => t('Ting'),
 );
 
-function subject_list_render($subtype, $conf, $args, $context) {
-	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
-	$scan_results = ting_subject_list_do_scan('arkitekter', 'subject', 100);
+function subject_list_render($subtype, $conf, $args, $context) {	
+	$result = ting_subject_list_get_subjects('bog');
+	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($result , TRUE), FILE_APPEND);
 	// Get the node respresenting this subject list from the context.
 	$node = NULL;
 	if (!empty($context) && !empty($context->data)) {
@@ -34,8 +34,7 @@ function subject_list_render($subtype, $conf, $args, $context) {
 	$block->content = array(
 		'#theme' => 'ting_subject_list_column',
 		'#column_title' => 'Test column title',
-	);
-	//file_put_contents("/home/drupalpro/debug/debug.txt", print_r($node , TRUE), FILE_APPEND);
+	);	
 	return $block;
 }
 
