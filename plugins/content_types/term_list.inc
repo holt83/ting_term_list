@@ -18,24 +18,29 @@ $plugin = array(
 	'single' => TRUE,
 	'render callback' => 'ting_term_list_render',
 	'required context' => new ctools_context_required(t('Node'), 'node'),
-	'edit form' => 'term_list_edit_form',
+	'edit form' => 'ting_term_list_edit_form',
 	'category' => t('Ting'),
 );
 
-function ting_term_list_render($subtype, $conf, $args, $context) {	
-	$result = ting_subject_list_get_subjects('musik');
-	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($result , TRUE), FILE_APPEND);
-	// Get the node respresenting this subject list from the context.
-	$node = NULL;
-	if (!empty($context) && !empty($context->data)) {
-		$node = $context->data;
+function ting_term_list_render($subtype, $conf, $args, $context) {
+	if (empty($context) || empty($context->data)) {
+		return FALSE;
 	}
+	// Get term list settings
+	$node = $context->data;
+	$settings = ting_term_list_get_term_list_settings($node);
+	$category = isset($settings['category']) ? $settings['category'] : 'bog';
+	$count = isset($settings['count']) ? $settings['count'] : 60;
+
+	// Get terms and setup render array for the plugin.
+	$terms = ting_term_list_get_terms($category, $count);
 	$block = new stdClass();
-	$block->title = 'Term list';
+	$block->title = $node->title;
 	$block->content = array(
-		'#theme' => 'ting_term_list_column',
-		'#column_title' => 'Test column title',
+		'#theme' => 'ting_term_list',
+		'#terms' => $terms,
 	);	
+
 	return $block;
 }
 

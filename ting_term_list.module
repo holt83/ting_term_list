@@ -42,7 +42,7 @@ function ting_term_list_theme() {
 			),
 			'template' => 'ting-term-list-column',
 		) + $common,
-		'ting_subject_list_subject' => array(
+		'ting_term_list_subject' => array(
 			'variables' => array(
 				'term' => NULL,
 			),
@@ -54,10 +54,10 @@ function ting_term_list_theme() {
 /**
  * Fetch Ting material terms from the data well, using the facet search option 
  * on the OpenSearch webservice. 
- * Returns an array keyed by term-names and their associated material count. 
+ * Returns an array keyed by term-names and their associated material count.
  *
  * @param $query
- *   A cql query string specifying a group of terms to return ('bog', 'musik').
+ *   A cql query string specifying a category of terms (e.g. 'bog', 'musik').
  * @param $num_resullt
  *   The max number of results to return.
  */
@@ -73,11 +73,36 @@ function ting_term_list_get_terms($query, $num_results = 100) {
 	if (!empty($profile) && method_exists($request, 'setProfile')) {
 	  $request->setProfile($profile);
 	}
-	// Use facet.subject to get terms.
+	// Use facet.subject to get terms
 	$request->setFacets(array('facet.subject'));
 	// Set the number of subjects to return
 	$request->setNumFacets($num_results);
 
+	// Get the terms from search result object
 	$search_result = ting_execute($request);
-	return $search_result;
+	$terms = array();
+	if (isset($search_result->facets)) {
+		$terms = $search_result->facets['facet.subject']->terms;
+	}
+	return $terms;
+}
+
+/**
+ * Returns a well structured settings array from the field values in the node.
+ */
+function ting_term_list_get_term_list_settings($node) {
+	$fields = array(
+		'category' => 'field_term_list_term_cat',
+		'count' => 'field_term_list_term_count',
+	);
+	$settings = array();
+	foreach ($fields as $key => $field) {
+		if (!empty($node->{$field})) {
+			$value = field_get_items('node', $node, $field);
+			$value = array_shift(array_values($value));
+			$value = $value['value'];
+			$settings[$key] = $value;
+		}
+	}
+	return $settings;
 }
