@@ -42,11 +42,11 @@ function ting_term_list_theme() {
 			),
 			'template' => 'ting-term-list-column',
 		) + $common,
-		'ting_term_list_subject' => array(
+		'ting_term_list_term' => array(
 			'variables' => array(
 				'term' => NULL,
 			),
-			'template' => 'ting-term-list-subject',
+			'template' => 'ting-term-list-term',
 		) + $common,
 	);
 }
