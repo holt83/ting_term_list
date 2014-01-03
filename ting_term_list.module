@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ *
+ * Module file for the Ting subject list module.
+ */
+
+/* Constants */
+define('TING_TERM_LIST_PATH', drupal_get_path('module', 'ting_term_list'));
+
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ting_term_list_ctools_plugin_directory($owner, $plugin_type) {
+	if ($owner == 'ctools' && !empty($plugin_type)) {
+		return "plugins/$plugin_type";
+	}
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ting_term_list_theme() {
+	$common = array(
+		'path' => TING_TERM_LIST_PATH . '/theme',
+		'file' => 'theme.inc', 
+	);
+	return array(
+		'ting_term_list' => array(
+			'variables' => array(
+				'terms' => array(),
+				'column_count' => 3,
+			),
+			'template' => 'ting-term-list',
+		) + $common,
+		'ting_term_list_column' => array(
+			'variables' => array(
+				'terms' => array(),
+				'column_title' => NULL,
+			),
+			'template' => 'ting-term-list-column',
+		) + $common,
+		'ting_subject_list_subject' => array(
+			'variables' => array(
+				'term' => NULL,
+			),
+			'template' => 'ting-term-list-subject',
+		) + $common,
+	);
+}
+
+/**
+ * Fetch Ting material terms from the data well, using the facet search option 
+ * on the OpenSearch webservice. 
+ * Returns an array keyed by term-names and their associated material count. 
+ *
+ * @param $query
+ *   A cql query string specifying a group of terms to return ('bog', 'musik').
+ * @param $num_resullt
+ *   The max number of results to return.
+ */
+function ting_term_list_get_terms($query, $num_results = 100) {
+	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
+
+	$request = ting_get_request_factory()->getSearchRequest();
+	$request->setQuery($query);
+	if ($agency = variable_get('ting_agency', FALSE)) {
+		$request->setAgency($agency);
+	}
+	$profile = variable_get('ting_search_profile', '');
+	if (!empty($profile) && method_exists($request, 'setProfile')) {
+	  $request->setProfile($profile);
+	}
+	// Use facet.subject to get terms.
+	$request->setFacets(array('facet.subject'));
+	// Set the number of subjects to return
+	$request->setNumFacets($num_results);
+
+	$search_result = ting_execute($request);
+	return $search_result;
+}

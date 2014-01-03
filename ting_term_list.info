@@ -1,0 +1,10 @@
+name = Ting term list
+description = Provides a content type for displaying a list of ting material terms.
+core = 7.x
+package = Ding!
+
+files[] = ting_term_list.module
+
+dependencies[] = ctools
+dependencies[] = panels
+dependencies[] = ting
