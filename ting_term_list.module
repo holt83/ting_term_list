@@ -44,7 +44,8 @@ function ting_term_list_theme() {
 		) + $common,
 		'ting_term_list_term' => array(
 			'variables' => array(
-				'term' => NULL,
+				'term_name' => NULL,
+				'term_count' => 0,
 			),
 			'template' => 'ting-term-list-term',
 		) + $common,
@@ -59,9 +60,9 @@ function ting_term_list_theme() {
  * @param $query
  *   A cql query string specifying a category of terms (e.g. 'bog', 'musik').
  * @param $num_resullt
- *   The max number of results to return.
+ *   The max number of terms to return.
  */
-function ting_term_list_get_terms($query, $num_results = 100) {
+function ting_term_list_get_terms($query, $num_results) {
 	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
 
 	$request = ting_get_request_factory()->getSearchRequest();
@@ -83,14 +84,8 @@ function ting_term_list_get_terms($query, $num_results = 100) {
 	$terms = array();
 	if (isset($search_result->facets)) {
 		$terms = $search_result->facets['facet.subject']->terms;
-		$terms_return = array();
-		$i = 0;
-		foreach ($terms as $key => $term) {
-			$terms_return[$i] = array($key => $term);
-			$i++;
-		}
 	}
-	return $terms_return;
+	return $terms;
 }
 
 /**

@@ -22,6 +22,9 @@ $plugin = array(
 	'category' => t('Ting'),
 );
 
+/**
+ * Render callback for the Ting term list plugin.
+ */
 function ting_term_list_render($subtype, $conf, $args, $context) {
 	if (empty($context) || empty($context->data)) {
 		return FALSE;

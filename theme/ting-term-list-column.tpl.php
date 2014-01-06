@@ -31,7 +31,7 @@
 	<?php endif; ?>
 	<?php if (isset($terms)): ?>
 		<div class="term-list-column-wrapper" <?php print $content_attributes; ?>>
-			<?php print $items; ?>
+			<?php print render($terms); ?>
 		</div>
 	<?php endif; ?>
 </div>

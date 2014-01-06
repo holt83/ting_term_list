@@ -4,8 +4,6 @@
  * HTML for a single term in the Ting term list.
  *
  * Avialable variables:
- *  - $term:
- *    An array containing the data for this term.
  *  - $term_name:
  *    The name of this term.
  *  - $term_count:
@@ -23,6 +21,6 @@
 ?>
 
 <div class="<?php print $classes; ?>" <?php print $attributes; ?>>
-	<a class="term-list-term-name"><?php print $term_name; ?></a>
+	<a href="#" class="term-list-term-name"><?php print $term_name; ?></a>
 	<div class="term-list-term-count"><?php print $term_count; ?></div>
 </div>
