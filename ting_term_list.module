@@ -83,8 +83,14 @@ function ting_term_list_get_terms($query, $num_results = 100) {
 	$terms = array();
 	if (isset($search_result->facets)) {
 		$terms = $search_result->facets['facet.subject']->terms;
+		$terms_return = array();
+		$i = 0;
+		foreach ($terms as $key => $term) {
+			$terms_return[$i] = array($key => $term);
+			$i++;
+		}
 	}
-	return $terms;
+	return $terms_return;
 }
 
 /**
