@@ -4,6 +4,8 @@
  * HTML for a single term in the Ting term list.
  *
  * Avialable variables:
+ *  - $term:
+ *  	An array with the data for this term.
  *  - $term_name:
  *    The name of this term.
  *  - $term_count:
