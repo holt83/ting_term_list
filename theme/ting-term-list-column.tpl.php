@@ -21,7 +21,7 @@
 
 ?>
 
-<div class="<?php print $classes; ?>" <?php print $attributes; ?>>
+<div class="<?php print $classes;?> <?php print $zebra?>" <?php print $attributes; ?>>
 	<?php if (isset($column_title)): ?>
 		<div class="term-list-column-header">
 			<?php print render($title_prefix); ?>

@@ -44,8 +44,7 @@ function ting_term_list_theme() {
 		) + $common,
 		'ting_term_list_term' => array(
 			'variables' => array(
-				'term_name' => NULL,
-				'term_count' => 0,
+				'term' => NULL,
 			),
 			'template' => 'ting-term-list-term',
 		) + $common,
@@ -56,6 +55,7 @@ function ting_term_list_theme() {
  * Fetch Ting material terms from the data well, using the facet search option 
  * on the OpenSearch webservice. 
  * Returns an array keyed by term-names and their associated material count.
+ * The array is sorted alphabetically on term-name.
  *
  * @param $query
  *   A cql query string specifying a category of terms (e.g. 'bog', 'musik').
@@ -85,6 +85,8 @@ function ting_term_list_get_terms($query, $num_results) {
 	if (isset($search_result->facets)) {
 		$terms = $search_result->facets['facet.subject']->terms;
 	}
+	// Sort on term-name (key).
+	ksort($terms);
 	return $terms;
 }
 
