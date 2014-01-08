@@ -110,7 +110,7 @@ function template_preprocess_ting_term_list_column(&$variables) {
 function template_preprocess_ting_term_list_term(&$variables) {
 	$term = $variables['term'];
 	$variables['term_name'] = $term['term_name'];
-	$variables['term_count'] = $term['term_count'];
+	$variables['term_count'] = '(' . $term['term_count'] . ')';
 }
 
 /**
@@ -158,11 +158,12 @@ function ting_term_list_get_terms($query, $num_results) {
 function ting_term_list_get_term_list_settings($node) {
 	$fields = array(
 		'category' => 'field_term_list_term_cat',
-		'count' => 'field_term_list_term_count',
+		'term_count' => 'field_term_list_term_count',
+		'column_count' => 'field_term_list_column_count',
 	);
 	$settings = array();
 	foreach ($fields as $key => $field) {
-		if (!empty($node->{$field})) {
+		if (isset($node->{$field}) && !empty($node->{$field})) {
 			$value = field_get_items('node', $node, $field);
 			$value = array_shift(array_values($value));
 			$value = $value['value'];

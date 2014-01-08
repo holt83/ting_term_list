@@ -23,15 +23,13 @@
 
 <div class="<?php print $classes;?> <?php print $zebra?>" <?php print $attributes; ?>>
 	<?php if (isset($column_title)): ?>
-		<div class="term-list-column-header">
+		<div class="ting-term-list-column-header">
 			<?php print render($title_prefix); ?>
 			<h3 <?php print $title_attributes; ?>> <?php print $column_title; ?></h3>
 			<?php print render($title_suffix); ?>
 		</div>
 	<?php endif; ?>
 	<?php if (isset($terms)): ?>
-		<div class="term-list-column-wrapper" <?php print $content_attributes; ?>>
-			<?php print render($terms); ?>
-		</div>
+		<?php print render($terms); ?>
 	<?php endif; ?>
 </div>

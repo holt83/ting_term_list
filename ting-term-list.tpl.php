@@ -25,7 +25,7 @@
 
 <div id="ting-term-list" class="<?php print $classes ?> clearfix" <?php print $attributes ?>>
 	<?php if (isset($columns)): ?>
-		<div class="term-list-columns-wrapper">
+		<div class="ting-term-list-columns">
 			<?php print render($columns); ?>
 		</div>
 	<?php endif; ?>
