@@ -9,6 +9,8 @@
 /* Constants */
 define('TING_TERM_LIST_PATH', drupal_get_path('module', 'ting_term_list'));
 
+/* Include file needed by features */
+include_once 'ting_term_list.features.inc';
 
 /**
  * Implements hook_ctools_plugin_directory().
@@ -64,9 +66,9 @@ function template_preprocess_ting_term_list(&$variables) {
 	$offset = 0;
 	for ($i = 0; $i < $column_count; $i++) {
 		$length = $column_term_count;
-		// If we have a rest - put an extra term in this column.
+		// If we have a rest -> put an extra term in this column.
 		if ($term_rest > 0) {
-			$length++;
+			$length++; 	
 			$term_rest--;
 		}
 		$column_terms = array_slice($terms, $offset, $length); 	
@@ -77,6 +79,9 @@ function template_preprocess_ting_term_list(&$variables) {
 		);
 	}
 	$variables['columns'] = $columns;
+	// Add CSS.
+	$css_options = array('group' => CSS_DEFAULT, 'type' => 'file');
+	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list.css');
 }
 
 /**
