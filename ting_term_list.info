@@ -10,6 +10,7 @@ dependencies[] = ctools
 dependencies[] = panels
 dependencies[] = page_manager
 dependencies[] = ting
+dependencies[] = ding_frontend
 dependencies[] = list
 dependencies[] = node
 dependencies[] = number
