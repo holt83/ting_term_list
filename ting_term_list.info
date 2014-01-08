@@ -39,5 +39,3 @@ features[variable][] = menu_parent_ting_term_list
 features[variable][] = node_options_ting_term_list
 features[variable][] = node_preview_ting_term_list
 features[variable][] = node_submitted_ting_term_list
-features_exclude[field][node-ting_term_list-field_term_list_term_cat] = node-ting_term_list-field_term_list_term_cat
-features_exclude[field][node-ting_term_list-field_term_list_term_count] = node-ting_term_list-field_term_list_term_count
