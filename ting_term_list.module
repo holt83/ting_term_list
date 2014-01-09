@@ -80,8 +80,12 @@ function template_preprocess_ting_term_list(&$variables) {
 	}
 	$variables['columns'] = $columns;
 	// Add CSS.
-	$css_options = array('group' => CSS_DEFAULT, 'type' => 'file');
-	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list.css');
+	$column_width = 100 / $column_count;
+	$css = 'div#ting-term-list div.ting-term-list-column { width: ' . $column_width . '%; }'; 		
+	$css_options = array('group' => CSS_DEFAULT, 'type' => 'inline');
+	drupal_add_css($css, $css_options);
+	$css_options['type'] = 'file';
+	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list.css', $css_options);
 }
 
 /**
@@ -167,8 +171,20 @@ function ting_term_list_get_term_list_settings($node) {
 			$value = field_get_items('node', $node, $field);
 			$value = array_shift(array_values($value));
 			$value = $value['value'];
-			$settings[$key] = $value;
 		}
+		else {
+			switch ($key) {
+				case 'category':
+					$value = 'bog'; 
+					break;
+				case 'term_count':
+					$value = 60;
+					break;
+				case 'column_count':
+					$value = 3;
+			}
+		}
+		$settings[$key] = $value;
 	}
 	return $settings;
 }

@@ -32,19 +32,17 @@ function ting_term_list_render($subtype, $conf, $args, $context) {
 	// Get term list settings
 	$node = $context->data;
 	$settings = ting_term_list_get_term_list_settings($node);
-	// Look for supported settings and apply defaults if needed.
-	$category = isset($settings['category']) ? $settings['category'] : 'bog';
-	$term_count = isset($settings['term_count']) ? $settings['term_count'] : 60;
-	$column_count = isset($settings['column_count']) ? $settings['column_count'] : 3;
 
 	// Get terms and setup render array for the plugin.
+	$category = $settings['category'];
+	$term_count = $settings['term_count'];
 	$terms = ting_term_list_get_terms($category, $term_count);
 	$block = new stdClass();
 	$block->title = $node->title;
 	$block->content = array(
 		'#theme' => 'ting_term_list',
 		'#terms' => $terms,
-		'#column_count' => $column_count,
+		'#column_count' => $settings['column_count'],
 	);	
 
 	return $block;

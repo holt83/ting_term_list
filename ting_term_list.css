@@ -5,7 +5,6 @@
 div#ting-term-list div.ting-term-list-column {
 	float: left;
 	padding-right: 0.9375em;
-	width: 33.33333%;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;		
@@ -42,10 +41,7 @@ div#ting-term-list div.ting-term-list-term-count {
 	div#ting-term-list div.ting-term-list-column {
 		float: none;
 		width: 100%;
-	}
-
-	div#ting-term-list div.ting-term-list-column:last-of-type {
-		padding-right: 0.9375em;
+		padding-right: 0;
 	}
 
 	div#ting-term-list div.ting-term-list-term:last-of-type {
