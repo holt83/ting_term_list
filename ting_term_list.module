@@ -105,7 +105,8 @@ function _ting_term_list_populate_columns($terms, $column_count) {
 	$term_count = count($terms);
 	// The term count for a column in the list.
 	$column_term_count = (int)($term_count / $column_count);
-	// 
+	// If the number of terms doesn't fit equally in the columns we hava a rest.
+	// The rest will be filled out in the left-most columns.
 	$term_rest = $term_count % $column_count;
 	$columns = array();
 	$offset = 0;
