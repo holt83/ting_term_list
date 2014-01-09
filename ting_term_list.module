@@ -56,36 +56,16 @@ function ting_term_list_theme() {
  */
 function template_preprocess_ting_term_list(&$variables) {
 	$terms = $variables['terms'];
-	// The total term count for the list.
-	$term_count = count($terms);
 	$column_count = $variables['column_count'];
-	// The term count for a column in the list.
-	$column_term_count = (int)($term_count / $column_count);
-	$term_rest = $term_count % $column_count;
-	$columns = array();
-	$offset = 0;
-	for ($i = 0; $i < $column_count; $i++) {
-		$length = $column_term_count;
-		// If we have a rest -> put an extra term in this column.
-		if ($term_rest > 0) {
-			$length++; 	
-			$term_rest--;
-		}
-		$column_terms = array_slice($terms, $offset, $length); 	
-		$offset += $length;
-		$columns[$i] = array(
-			'#theme' => 'ting_term_list_column',
-			'#terms' => $column_terms,
-		);
-	}
+	// Populate the columns of the list.
+	$columns = _ting_term_list_populate_columns($terms, $column_count);
 	$variables['columns'] = $columns;
-	// Add CSS.
-	$column_width = 100 / $column_count;
-	$css = 'div#ting-term-list div.ting-term-list-column { width: ' . $column_width . '%; }'; 		
-	$css_options = array('group' => CSS_DEFAULT, 'type' => 'inline');
-	drupal_add_css($css, $css_options);
-	$css_options['type'] = 'file';
-	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list.css', $css_options);
+	// Add static and dynamically calculated CSS.
+	$css_rules['div#ting-term-list div.ting-term-list-column'] = array(
+		'width' => 100 / $column_count . '%',
+	);
+	_ting_term_list_update_generated_css($css_rules);
+	_ting_term_list_add_css();
 }
 
 /**
@@ -118,10 +98,61 @@ function template_preprocess_ting_term_list_term(&$variables) {
 }
 
 /**
+ * Populate the $terms in the specified number of columns.
+ */
+function _ting_term_list_populate_columns($terms, $column_count) {
+	// The total term count for the list.
+	$term_count = count($terms);
+	// The term count for a column in the list.
+	$column_term_count = (int)($term_count / $column_count);
+	// 
+	$term_rest = $term_count % $column_count;
+	$columns = array();
+	$offset = 0;
+	for ($i = 0; $i < $column_count; $i++) {
+		$length = $column_term_count;
+		// If we have a rest -> put an extra term in this column.
+		if ($term_rest > 0) {
+			$length++; 	
+			$term_rest--;
+		}
+		$column_terms = array_slice($terms, $offset, $length); 	
+		$offset += $length;
+		$columns[$i] = array(
+			'#theme' => 'ting_term_list_column',
+			'#terms' => $column_terms,
+		);
+	}
+	return $columns;
+}
+
+/**
+ * Updates the generated css file with dynamically calculated rules, specified
+ * in the $css_rules array parameter.
+ */
+function _ting_term_list_update_generated_css($css_rules) {
+	$css = "";
+	foreach ($css_rules as $selector => $values) {
+		foreach ($values as $property => $value) {
+			$css .= "$selector { $property: $value; }\n";
+		}
+	}
+	return file_put_contents(TING_TERM_LIST_PATH . '/ting_term_list_generated.css', $css);
+}
+
+/**
+ * Adds the CSS for the term list.
+ */
+function _ting_term_list_add_css() {
+	$css_options = array('group' => CSS_DEFAULT, 'preprocess' => FALSE, 'type' => 'file');
+	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list_generated.css', $css_options);
+	$css_options['preprocess'] = TRUE;
+	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list_style.css', $css_options);
+}
+
+/**
  * Fetch Ting material terms from the data well, using the facet search option 
  * on the OpenSearch webservice. 
- * Returns an array keyed by term-names and their associated material count.
- * The array is sorted alphabetically on term-name.
  *
  * @param $query
  *   A cql query string specifying a category of terms (e.g. 'bog', 'musik').
