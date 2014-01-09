@@ -192,7 +192,7 @@ function ting_term_list_get_terms($query, $num_results) {
  */
 function ting_term_list_get_term_list_settings($node) {
 	$fields = array(
-		'category' => 'field_term_list_term_cat',
+		'term_query' => 'field_term_list_term_query',
 		'term_count' => 'field_term_list_term_count',
 		'column_count' => 'field_term_list_column_count',
 	);
@@ -205,7 +205,7 @@ function ting_term_list_get_term_list_settings($node) {
 		}
 		else {
 			switch ($key) {
-				case 'category':
+				case 'term_query':
 					$value = 'bog'; 
 					break;
 				case 'term_count':

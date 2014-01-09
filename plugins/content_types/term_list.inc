@@ -34,9 +34,9 @@ function ting_term_list_render($subtype, $conf, $args, $context) {
 	$settings = ting_term_list_get_term_list_settings($node);
 
 	// Get terms and setup render array for the plugin.
-	$category = $settings['category'];
+	$term_query = $settings['term_query'];
 	$term_count = $settings['term_count'];
-	$terms = ting_term_list_get_terms($category, $term_count);
+	$terms = ting_term_list_get_terms($term_query, $term_count);
 	$block = new stdClass();
 	$block->title = $node->title;
 	$block->content = array(

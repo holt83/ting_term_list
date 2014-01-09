@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * ting_term_list_feature.pages_default.inc
+ * ting_term_list.pages_default.inc
  */
 
 /**
