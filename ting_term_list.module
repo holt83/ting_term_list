@@ -60,12 +60,8 @@ function template_preprocess_ting_term_list(&$variables) {
 	// Populate the columns of the list.
 	$columns = _ting_term_list_populate_columns($terms, $column_count);
 	$variables['columns'] = $columns;
-	// Add static and dynamically calculated CSS.
-	$css_rules['div#ting-term-list div.ting-term-list-column'] = array(
-		'width' => 100 / $column_count . '%',
-	);
-	_ting_term_list_update_generated_css($css_rules);
-	_ting_term_list_add_css();
+	// Add CSS.
+	_ting_term_list_add_css($column_count);
 }
 
 /**
@@ -112,7 +108,7 @@ function _ting_term_list_populate_columns($terms, $column_count) {
 	$offset = 0;
 	for ($i = 0; $i < $column_count; $i++) {
 		$length = $column_term_count;
-		// If we have a rest -> put an extra term in this column.
+		// If we have a rest, put an extra term in this column.
 		if ($term_rest > 0) {
 			$length++; 	
 			$term_rest--;
@@ -128,26 +124,14 @@ function _ting_term_list_populate_columns($terms, $column_count) {
 }
 
 /**
- * Updates the generated css file with dynamically calculated rules, specified
- * in the $css_rules array parameter.
- */
-function _ting_term_list_update_generated_css($css_rules) {
-	$css = "";
-	foreach ($css_rules as $selector => $values) {
-		foreach ($values as $property => $value) {
-			$css .= "$selector { $property: $value; }\n";
-		}
-	}
-	return file_put_contents(TING_TERM_LIST_PATH . '/ting_term_list_generated.css', $css);
-}
-
-/**
  * Adds the CSS for the term list.
  */
-function _ting_term_list_add_css() {
-	$css_options = array('group' => CSS_DEFAULT, 'preprocess' => FALSE, 'type' => 'file');
-	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list_generated.css', $css_options);
-	$css_options['preprocess'] = TRUE;
+function _ting_term_list_add_css($column_count) {
+	$column_width = (100 / $column_count) . '%';
+	$css_options = array('group' => CSS_DEFAULT, 'type' => 'inline');
+	$css = "div#ting-term-list div.ting-term-list-column { width: $column_width; }";
+	drupal_add_css($css, $css_options);
+	$css_options['type'] = 'file';
 	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list_style.css', $css_options);
 }
 
