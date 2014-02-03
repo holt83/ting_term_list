@@ -36,7 +36,6 @@ function ting_term_list_theme() {
 		'ting_term_list_column' => array(
 			'variables' => array(
 				'terms' => array(),
-				'column_title' => NULL,
 			),
 			'template' => 'ting-term-list-column',
 		),
@@ -72,12 +71,12 @@ function template_preprocess_ting_term_list(&$variables) {
 function template_preprocess_ting_term_list_column(&$variables) {
 	$terms = $variables['terms'];
 	$terms_render = array();
-	foreach ($terms as $term_name => $term_count) {
+	foreach ($terms as $term_name => $material_count) {
 		$terms_render[] = array(
 			'#theme' => 'ting_term_list_term',
 			'#term' => array(
 			  'term_name' => $term_name,
-			  'term_count' => $term_count,
+			  'material_count' => $material_count,
 			),
 		);
 	}
@@ -90,7 +89,8 @@ function template_preprocess_ting_term_list_column(&$variables) {
 function template_preprocess_ting_term_list_term(&$variables) {
 	$term = $variables['term'];
 	$variables['term_name'] = $term['term_name'];
-	$variables['term_count'] = '(' . $term['term_count'] . ')';
+	$variables['term_href'] = '/ting/search/' . $term['term_name'];
+	$variables['material_count'] = $term['material_count']; 
 }
 
 /**
@@ -139,16 +139,16 @@ function _ting_term_list_add_css($column_count) {
  * Fetch Ting material terms from the data well, using the facet search option 
  * on the OpenSearch webservice. 
  *
- * @param $query
+ * @param $term_query
  *   A cql query string specifying a category of terms (e.g. 'bog', 'musik').
- * @param $num_resullt
+ * @param $term_count
  *   The max number of terms to return.
  */
-function ting_term_list_get_terms($query, $num_results) {
+function ting_term_list_get_terms($term_query, $term_count) {
 	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
 
 	$request = ting_get_request_factory()->getSearchRequest();
-	$request->setQuery($query);
+	$request->setQuery($term_query);
 	if ($agency = variable_get('ting_agency', FALSE)) {
 		$request->setAgency($agency);
 	}
@@ -159,7 +159,7 @@ function ting_term_list_get_terms($query, $num_results) {
 	// Use facet.subject to get terms
 	$request->setFacets(array('facet.subject'));
 	// Set the number of subjects to return
-	$request->setNumFacets($num_results);
+	$request->setNumFacets($term_count);
 
 	// Get the terms from search result object
 	$search_result = ting_execute($request);

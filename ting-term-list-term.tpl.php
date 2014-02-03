@@ -27,9 +27,9 @@
 
 <div class="<?php print $classes;?> <?php print $zebra;?>" <?php print $attributes; ?>>
 	<?php if (isset($term_name)): ?>
-		<a href="#" class="ting-term-list-term-name"><?php print $term_name; ?></a>
+		<a href="<?php print $term_href;?>" class="term-name"><?php print $term_name; ?></a>
 	<?php endif; ?>
-	<?php if (isset($term_count)): ?>
-		<div class="ting-term-list-term-count"><?php print $term_count; ?></div>
+	<?php if (isset($material_count)): ?>
+		<div class="material-count">(<?php print $material_count; ?>)</div>
 	<?php endif; ?>
 </div>

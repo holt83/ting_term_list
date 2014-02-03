@@ -27,7 +27,7 @@ div#ting-term-list div.ting-term-list-term:last-of-type {
 	padding-bottom: 0;
 }
 
-div#ting-term-list div.ting-term-list-term-count {
+div#ting-term-list div.material-count {
 	display: inline;
 }
 
