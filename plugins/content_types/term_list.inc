@@ -29,22 +29,19 @@ function ting_term_list_render($subtype, $conf, $args, $context) {
 	if (empty($context) || empty($context->data)) {
 		return FALSE;
 	}
-	// Get term list settings
-	$node = $context->data;
-	$settings = ting_term_list_get_term_list_settings($node);
-
-	// Get terms and setup render array for the plugin.
-	$term_query = $settings['term_query'];
-	$term_count = $settings['term_count'];
-	$terms = ting_term_list_get_terms($term_query, $term_count);
 	$block = new stdClass();
-	$block->title = $node->title;
-	$block->content = array(
-		'#theme' => 'ting_term_list',
-		'#terms' => $terms,
-		'#column_count' => $settings['column_count'],
-	);	
-
+	$node = $context->data;
+	if ($node->type == 'ting_term_list') {
+		$terms = ting_term_list_get_terms($node);
+		$column_count = ting_term_list_get_field_value($node, 'field_term_list_column_count');
+		$column_count = ($column_count ? $column_count : 3);
+		$block->title = $node->title;
+		$block->content = array(
+			'#theme' => 'ting_term_list',
+			'#terms' => $terms,
+			'#column_count' => $column_count,
+		);	
+	}
 	return $block;
 }
 

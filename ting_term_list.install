@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ *
+ * Intall file for the ting term list module.
+ */
+
+/**
+ * Implements hook_schema().
+ *
+ * Define a seperate cache table for our term lists.
+ */
+function ting_term_list_schema() {
+	$schema = array();
+	$schema['cache_ting_term_list'] = drupal_get_schema_unprocessed('system', 'cache');
+	return $schema;
+}

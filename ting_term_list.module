@@ -8,6 +8,7 @@
 
 /* Constants */
 define('TING_TERM_LIST_PATH', drupal_get_path('module', 'ting_term_list'));
+define('TING_TERM_LIST_CACHE_LIFETIME', 604800); // 1 weeek.
 
 /* Include file needed by features */
 include_once 'ting_term_list.features.inc';
@@ -89,7 +90,7 @@ function template_preprocess_ting_term_list_column(&$variables) {
 function template_preprocess_ting_term_list_term(&$variables) {
 	$term = $variables['term'];
 	$variables['term_name'] = $term['term_name'];
-	$variables['term_href'] = '/ting/search/' . $term['term_name'];
+	$variables['term_href'] = '/search/ting/' . $term['term_name'];
 	$variables['material_count'] = $term['material_count']; 
 }
 
@@ -139,68 +140,64 @@ function _ting_term_list_add_css($column_count) {
  * Fetch Ting material terms from the data well, using the facet search option 
  * on the OpenSearch webservice. 
  *
- * @param $term_query
- *   A cql query string specifying a category of terms (e.g. 'bog', 'musik').
- * @param $term_count
- *   The max number of terms to return.
+ * @param $node
+ *   A node of type 'ting_term_list' with the settings for the term list.
+ * @return
+ *   An array of Ting material terms matching the query from the node.
+ *   (term_name => material_count)
  */
-function ting_term_list_get_terms($term_query, $term_count) {
-	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
+function ting_term_list_get_terms($node) {
+	// Check the cache first.
+	$cache = cache_get('ting_term_list:' . $node->nid, 'cache_ting_term_list');
+	if ($cache && ($cache->expire > REQUEST_TIME)) {
+		$terms = $cache->data;
+	}
+	// Else fetch the terms from the data well and cache the result.	
+	else {
+		require_once drupal_get_path('module', 'ting') . '/ting.client.inc';
+		// Get term list settings or apply default values if necessary.
+		$term_query = ting_term_list_get_field_value($node, 'field_term_list_term_query');
+		$term_query = ($term_query ? $term_query : 'bog');
+ 		$term_count = ting_term_list_get_field_value($node, 'field_term_list_term_count');
+ 		$term_count = ($term_count ? $term_count : 60);
 
-	$request = ting_get_request_factory()->getSearchRequest();
-	$request->setQuery($term_query);
-	if ($agency = variable_get('ting_agency', FALSE)) {
-		$request->setAgency($agency);
-	}
-	$profile = variable_get('ting_search_profile', '');
-	if (!empty($profile) && method_exists($request, 'setProfile')) {
-	  $request->setProfile($profile);
-	}
-	// Use facet.subject to get terms
-	$request->setFacets(array('facet.subject'));
-	// Set the number of subjects to return
-	$request->setNumFacets($term_count);
+		$request = ting_get_request_factory()->getSearchRequest();
+		$request->setQuery($term_query);
+		if ($agency = variable_get('ting_agency', FALSE)) {
+			$request->setAgency($agency);
+		}
+		$profile = variable_get('ting_search_profile', '');
+		if (!empty($profile) && method_exists($request, 'setProfile')) {
+		  $request->setProfile($profile);
+		}
+		// Use facet.subject to get terms
+		$request->setFacets(array('facet.subject'));
+		// Set the number of subjects to return
+		$request->setNumFacets($term_count);
 
-	// Get the terms from search result object
-	$search_result = ting_execute($request);
-	$terms = array();
-	if (isset($search_result->facets)) {
-		$terms = $search_result->facets['facet.subject']->terms;
+		// Get the terms from search result object
+		$search_result = ting_execute($request);
+		$terms = array();
+		if (isset($search_result->facets)) {
+			$terms = $search_result->facets['facet.subject']->terms;
+		}
+		// Sort on term-name (key).
+		ksort($terms);
+		$cid = 'ting_term_list:' . $node->nid;
+		$expiration_time = time() + TING_TERM_LIST_CACHE_LIFETIME;
+		cache_set($cid, $terms, 'cache_ting_term_list', $expiration_time);		
 	}
-	// Sort on term-name (key).
-	ksort($terms);
 	return $terms;
 }
 
 /**
- * Returns a well structured settings array from the field values in the node.
+ * Gets the values from the specified field on the specified node.
  */
-function ting_term_list_get_term_list_settings($node) {
-	$fields = array(
-		'term_query' => 'field_term_list_term_query',
-		'term_count' => 'field_term_list_term_count',
-		'column_count' => 'field_term_list_column_count',
-	);
-	$settings = array();
-	foreach ($fields as $key => $field) {
-		if (isset($node->{$field}) && !empty($node->{$field})) {
-			$value = field_get_items('node', $node, $field);
-			$value = array_shift(array_values($value));
-			$value = $value['value'];
-		}
-		else {
-			switch ($key) {
-				case 'term_query':
-					$value = 'bog'; 
-					break;
-				case 'term_count':
-					$value = 60;
-					break;
-				case 'column_count':
-					$value = 3;
-			}
-		}
-		$settings[$key] = $value;
+function ting_term_list_get_field_value($node, $field_name) {
+	if (isset($node->{$field_name}) && !empty($node->{$field_name})) {
+		$value = field_get_items('node', $node, $field_name);
+		$value = array_shift(array_values($value));
+		return $value['value'];
 	}
-	return $settings;
+	return FALSE;
 }
