@@ -95,8 +95,15 @@ function ting_term_list_cron_queue_info() {
  * Worker callback.
  */
 function ting_term_list_cron_worker_callback($node) {
+	// Set the cache.
 	ting_term_list_set_cache($node);
+	// Update cache history.
 	$query = db_insert('cache_history_ting_term_list');
+	$query->fields(array(
+		'nid' => $node->nid,
+		'time' => time(),
+	));
+	$query->execute();
 }
 
 /**
