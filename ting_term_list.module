@@ -25,12 +25,43 @@ function ting_term_list_ctools_plugin_directory($owner, $plugin_type) {
 }
 
 /**
+ * Implements hook_menu().
+ */
+function ting_term_list_menu() {
+	$items['admin/config/ting/term-list'] = array(
+		'title' => 'Term list settings',
+		'description' => t('Manage settings for the ting term list module.'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('ting_term_list_admin_form'),
+		'access arguments' => array('administer ting settings'),
+		'type' => MENU_CALLBACK,
+	);
+	return $items;
+}
+
+/**
+ * Form builder for 'admin/config/ting/term-list' route.
+ */
+function ting_term_list_admin_form($form, &$form_state) {
+	$form['cache_settings'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Ting term list cache settings'),
+		'#tree' => FALSE,
+	);
+	$form['cache_settings']['lifetime'] = array(
+	);
+	$form['cache_settings']['amount'] = array(
+	);
+	return system_settings_form($form);
+}
+
+/**
  * Tezt!!
  */
 function ting_term_list_init() {
-	$hour = date('G');
-	$now = time();
-	$day_of_month = date('j', $now);
+	//$hour = date('G');
+	//$now = time();
+	//$day_of_month = date('j', $now);
 	
 	// file_put_contents("/home/drupalpro/debug/debug.txt", print_r($day_of_month , TRUE), FILE_APPEND);
 }
@@ -40,7 +71,7 @@ function ting_term_list_init() {
  */
 function ting_term_list_cron() {
 	// We only want to update the cache once a night between 00:00 and 06:00.
-	$current_hour = 3;//date('G');
+	$current_hour = date('G');
 	if ($current_hour >= 0 && $current_hour <= 6) {
 		// Remove any cache history records not from the current day.
 		$current_day = date('j');
@@ -51,19 +82,18 @@ function ting_term_list_cron() {
 		foreach ($result as $record) {
 			$day = date('n', $record->time);
 			if ($day != $current_day) {
-				$query_delete = db_delete('cache_history_ting_term_list');
-				$query_delete->condition('nid', $record->nid);
-				$query_delete->condition('time', $record->time);
-				$delete_count = $query_delete->execute();				
+				$query_delete = db_delete('cache_history_ting_term_list')
+				  ->condition('nid', $record->nid)
+				  ->condition('time', $record->time);
+				$query_delete->execute();				
 			}
 		}
 		$query = db_select('cache_history_ting_term_list', 'chttl');
 		$cache_history_count = $query->countQuery()->execute()->fetchField();
 		$queue = DrupalQueue::get('ting_term_list_cache_queue');
 		// If there is no records in the cache history and there is no items in 
-		// the queue, tonights updates hasn't been run or completed. In this case 
-		// we go ahead and start tonights cache updates. 
-		// Otherwise we do nothing. 
+		// the queue, tonights updates hasn't been run. In this case we go ahead 
+		// and start tonights cache updates. 
 		if ($cache_history_count == 0 && $queue->numberOfItems() == 0) {
 			$query = db_select('cache_ting_term_list', 'cttl');
 			$query->addField('cttl', 'cid', 'cid');
@@ -93,17 +123,17 @@ function ting_term_list_cron_queue_info() {
 
 /**
  * Worker callback.
+ *
+ * Cache the term list for the specified node and update cache history.
  */
 function ting_term_list_cron_worker_callback($node) {
-	// Set the cache.
 	ting_term_list_set_cache($node);
-	// Update cache history.
 	$query = db_insert('cache_history_ting_term_list');
 	$query->fields(array(
 		'nid' => $node->nid,
 		'time' => time(),
 	));
-	$query->execute();
+	return $query->execute();
 }
 
 /**
