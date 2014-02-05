@@ -25,27 +25,59 @@ function ting_term_list_ctools_plugin_directory($owner, $plugin_type) {
 }
 
 /**
+ * Tezt!!
+ */
+function ting_term_list_init() {
+	$hour = date('G');
+	$now = time();
+	$day_of_month = date('j', $now);
+	
+	// file_put_contents("/home/drupalpro/debug/debug.txt", print_r($day_of_month , TRUE), FILE_APPEND);
+}
+
+/**
  * Implements hook_cron().
  */
 function ting_term_list_cron() {
-	$queue = DrupalQueue::get('ting_term_list_cache_queue');
-	$now = 3; //date('G');
-	// Ensure that we only update the cache at night between 00:00 and 06:00, and
-	// that we only add items to the queue if it's empty.
-	if ($now >= 0 && $now <= 6 && $queue->numberOfItems() == 0) {
-		$query = db_select(TING_TERM_LIST_CACHE_TABLE, 'cttl');
-		$query->addField('cttl', 'cid', 'cid');
-		$query->orderBy('cttl.created', 'ASC');
-		$query->range(0, TING_TERM_LIST_CACHE_AMOUNT);
+	// We only want to update the cache once a night between 00:00 and 06:00.
+	$current_hour = 3;//date('G');
+	if ($current_hour >= 0 && $current_hour <= 6) {
+		// Remove any cache history records not from the current day.
+		$current_day = date('j');
+		$query = db_select('cache_history_ting_term_list', 'chttl');
+		$query->addField('chttl', 'nid', 'nid');
+		$query->addFIeld('chttl', 'time', 'time');			
 		$result = $query->execute();
-		$nids = array();
 		foreach ($result as $record) {
-			
+			$day = date('n', $record->time);
+			if ($day != $current_day) {
+				$query_delete = db_delete('cache_history_ting_term_list');
+				$query_delete->condition('nid', $record->nid);
+				$query_delete->condition('time', $record->time);
+				$delete_count = $query_delete->execute();				
+			}
 		}
-
-		
+		$query = db_select('cache_history_ting_term_list', 'chttl');
+		$cache_history_count = $query->countQuery()->execute()->fetchField();
+		$queue = DrupalQueue::get('ting_term_list_cache_queue');
+		// If there is no records in the cache history and there is no items in 
+		// the queue, tonights updates hasn't been run or completed. In this case 
+		// we go ahead and start tonights cache updates. 
+		// Otherwise we do nothing. 
+		if ($cache_history_count == 0 && $queue->numberOfItems() == 0) {
+			$query = db_select('cache_ting_term_list', 'cttl');
+			$query->addField('cttl', 'cid', 'cid');
+			$query->orderBy('cttl.created', 'ASC');
+			$query->range(0, TING_TERM_LIST_CACHE_AMOUNT);
+			$result = $query->execute();
+			foreach ($result as $record) {
+				$cid_array = explode(':', $record->cid);
+				$nid = $cid_array[1];
+				$node = node_load($nid);
+				$queue->createItem($node);
+			}
+		}	
 	}
-	//file_put_contents("/home/drupalpro/debug/debug.txt", print_r($now , TRUE), FILE_APPEND);
 }
 
 /**
@@ -54,7 +86,7 @@ function ting_term_list_cron() {
 function ting_term_list_cron_queue_info() {
 	$queues['ting_term_list_cache_queue'] = array(
 		'worker callback' => 'ting_term_list_cron_worker_callback',
-		'time' => 600,
+		'time' => 60,
 	);
 	return $queues;
 }
@@ -63,7 +95,8 @@ function ting_term_list_cron_queue_info() {
  * Worker callback.
  */
 function ting_term_list_cron_worker_callback($node) {
-
+	ting_term_list_set_cache($node);
+	$query = db_insert('cache_history_ting_term_list');
 }
 
 /**
@@ -101,10 +134,8 @@ function ting_term_list_theme() {
 function template_preprocess_ting_term_list(&$variables) {
 	$terms = $variables['terms'];
 	$column_count = $variables['column_count'];
-	// Populate the columns of the list.
 	$columns = _ting_term_list_populate_columns($terms, $column_count);
 	$variables['columns'] = $columns;
-	// Add CSS.
 	_ting_term_list_add_css($column_count);
 }
 
@@ -185,7 +216,7 @@ function _ting_term_list_add_css($column_count) {
  *   A node of type 'ting_term_list' with the settings for the term list.
  * @return
  *   An array of Ting material terms matching the query from the node.
- *   (term_name => material_count)
+ *   (term_name => material_count).
  */
 function ting_term_list_get_terms($node) {
 	// Check the cache first.
@@ -193,29 +224,40 @@ function ting_term_list_get_terms($node) {
 	if ($cache && ($cache->expire > REQUEST_TIME)) {
 		$terms = $cache->data;
 	}
-	// Else fetch the terms from the data well and cache the result.	
+	// Else fetch the terms from the data well and cache the list.	
 	else {
-		// Get term list settings or apply default values if necessary.
-		$term_query = ting_term_list_get_field_value($node, 'field_term_list_term_query');
-		$term_query = ($term_query ? $term_query : 'bog');
- 		$term_count = ting_term_list_get_field_value($node, 'field_term_list_term_count');
- 		$term_count = ($term_count ? $term_count : 60);
-
- 		// Search the well for terms
- 		$terms = ting_term_list_search_terms($term_query, $term_count);
-
-		$cid = 'ting_term_list:' . $node->nid;
-		$expiration_time = time() + (TING_TERM_LIST_CACHE_LIFETIME * 24 * 60 * 60);
-		cache_set($cid, $terms, TING_TERM_LIST_CACHE_TABLE, $expiration_time);		
+		$terms = ting_term_list_set_cache($node);
 	}
 	return $terms;
+}
+
+/**
+ * Updates the cache for the specified term list node.
+ *
+ * @return
+ *   An array with the terms that was saved to the cache.
+ */
+function ting_term_list_set_cache($node) {
+	// Get term list settings or apply default values if necessary.
+	$term_query = ting_term_list_get_field_value($node, 'field_term_list_term_query');
+	$term_count = ting_term_list_get_field_value($node, 'field_term_list_term_count');
+	// Search the well for terms
+	$terms = ting_term_list_search_terms($term_query, $term_count);
+	$cid = 'ting_term_list:' . $node->nid;
+	$expiration_time = time() + (TING_TERM_LIST_CACHE_LIFETIME * 24 * 60 * 60);
+	cache_set($cid, $terms, TING_TERM_LIST_CACHE_TABLE, $expiration_time);
+	return $terms;			
 }
 
 /**
  * Fetch Ting material terms from the data well, using the facet search option 
  * on the OpenSearch webservice.  
  *
- *	 
+ * @param $term_query
+ *   A cql query to run against the data well, specifying a category of terms
+ *   (e.g. 'musik', 'bog')
+ * @param $term_count
+ *   The max number of terms to return.
  */
 function ting_term_list_search_terms($term_query, $term_count) {
 	require_once drupal_get_path('module', 'ting') . '/ting.client.inc';

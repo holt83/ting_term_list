@@ -14,5 +14,39 @@
 function ting_term_list_schema() {
 	$schema = array();
 	$schema['cache_ting_term_list'] = drupal_get_schema_unprocessed('system', 'cache');
+	$schema['cache_history_ting_term_list'] = array(
+		'description' => 'Keeps track of nightly updates to the term list cache',
+		'fields' => array(
+			'nid' => array(
+				'description' => 'The ID of the term list node that was cached',
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => 0,
+			),
+			'time' => array(
+				'description' => 'The exact time the nightly update was performed',
+				'type' => 'int',
+				'not null' => TRUE,
+				'default' => 0,
+			),
+		),
+		'primary key' => array('nid', 'time'),
+		'indexes' => array(
+			'time' => array('time'),
+		),
+	);
 	return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ting_term_list_uninstall() {
+	if (db_table_exists('cache_ting_term_list')) {
+		db_drop_table('cache_ting_term_list');
+	}	
+	if (db_table_exists('cache_history_ting_term_list')) {
+		db_drop_table('cache_history_ting_term_list');
+	}
 }
