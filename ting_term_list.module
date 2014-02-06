@@ -6,11 +6,10 @@
  * Module file for the Ting subject list module.
  */
 
-/* Constants */
-define('TING_TERM_LIST_PATH', drupal_get_path('module', 'ting_term_list'));
-define('TING_TERM_LIST_CACHE_TABLE', 'cache_ting_term_list');
-define('TING_TERM_LIST_CACHE_LIFETIME', 7); // 7 days.
-define('TING_TERM_LIST_CACHE_AMOUNT', 4); // The amount of term lists to cache each day (should be a setting)
+// Default cache lifetime for term list (7 days).
+define('TING_TERM_LIST_DEFAULT_CACHE_LIFETIME', 604800); 
+// Default amount of term lists to cache each night.
+define('TING_TERM_LIST_DEFAULT_CACHE_AMOUNT', 10); 
 
 /* Include file needed by features */
 include_once 'ting_term_list.features.inc';
@@ -28,13 +27,13 @@ function ting_term_list_ctools_plugin_directory($owner, $plugin_type) {
  * Implements hook_menu().
  */
 function ting_term_list_menu() {
+	$items = array();
 	$items['admin/config/ting/term-list'] = array(
 		'title' => 'Term list settings',
 		'description' => t('Manage settings for the ting term list module.'),
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('ting_term_list_admin_form'),
 		'access arguments' => array('administer ting settings'),
-		'type' => MENU_CALLBACK,
 	);
 	return $items;
 }
@@ -48,7 +47,17 @@ function ting_term_list_admin_form($form, &$form_state) {
 		'#title' => t('Ting term list cache settings'),
 		'#tree' => FALSE,
 	);
-	$form['cache_settings']['lifetime'] = array(
+	$options = array();
+	for ($i = 7; $i <= 14; $i++) {
+		$options[$i] = t('@days dage', array('@days' => $i));
+	}
+	$form['cache_settings']['ting_term_list_cache_lifetime'] = array(
+		'#type' => 'select',
+		'#title' => t('Cache lifetime'),
+		'#description' => t('Select the amount of time term lists should be cahced'),
+		'#default_value' => variable_get('ting_term_list_cache_lifetime', 
+			TING_TERM_LIST_DEFAULT_CACHE_LIFETIME),
+		'#options' => $options,
 	);
 	$form['cache_settings']['amount'] = array(
 	);
@@ -71,7 +80,7 @@ function ting_term_list_init() {
  */
 function ting_term_list_cron() {
 	// We only want to update the cache once a night between 00:00 and 06:00.
-	$current_hour = date('G');
+	$current_hour = 2;//date('G');
 	if ($current_hour >= 0 && $current_hour <= 6) {
 		// Remove any cache history records not from the current day.
 		$current_day = date('j');
@@ -80,7 +89,7 @@ function ting_term_list_cron() {
 		$query->addFIeld('chttl', 'time', 'time');			
 		$result = $query->execute();
 		foreach ($result as $record) {
-			$day = date('n', $record->time);
+			$day = date('j', $record->time);
 			if ($day != $current_day) {
 				$query_delete = db_delete('cache_history_ting_term_list')
 				  ->condition('nid', $record->nid)
@@ -215,7 +224,7 @@ function _ting_term_list_populate_columns($terms, $column_count) {
 	// The term count for a column in the list.
 	$column_term_count = (int)($term_count / $column_count);
 	// If the number of terms doesn't fit equally in the columns we hava a rest.
-	// The rest will be filled out in the left-most columns.
+	// This rest will be filled out in the left-most columns.
 	$term_rest = $term_count % $column_count;
 	$columns = array();
 	$offset = 0;
@@ -281,6 +290,7 @@ function ting_term_list_set_cache($node) {
 	// Search the well for terms
 	$terms = ting_term_list_search_terms($term_query, $term_count);
 	$cid = 'ting_term_list:' . $node->nid;
+	// Convert the expiration time from days to seconds.
 	$expiration_time = time() + (TING_TERM_LIST_CACHE_LIFETIME * 24 * 60 * 60);
 	cache_set($cid, $terms, TING_TERM_LIST_CACHE_TABLE, $expiration_time);
 	return $terms;			
