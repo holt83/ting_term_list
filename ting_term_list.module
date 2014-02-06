@@ -59,7 +59,13 @@ function ting_term_list_admin_form($form, &$form_state) {
 			TING_TERM_LIST_DEFAULT_CACHE_LIFETIME),
 		'#options' => $options,
 	);
-	$form['cache_settings']['amount'] = array(
+	$form['cache_settings']['ting_term_list_cache_amount'] = array(
+		'#type' => 'select'
+	);
+	$form['cache_history'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Ting term list cache history'),
+		'#tree' => FALSE,
 	);
 	return system_settings_form($form);
 }
