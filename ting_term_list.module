@@ -7,7 +7,7 @@
  */
 
 // Default cache lifetime for term list (7 days).
-define('TING_TERM_LIST_DEFAULT_CACHE_LIFETIME', 604800); 
+define('TING_TERM_LIST_DEFAULT_CACHE_LIFETIME', 7); 
 // Default amount of term lists to cache each night.
 define('TING_TERM_LIST_DEFAULT_CACHE_AMOUNT', 10); 
 
@@ -42,9 +42,10 @@ function ting_term_list_menu() {
  * Form builder for 'admin/config/ting/term-list' route.
  */
 function ting_term_list_admin_form($form, &$form_state) {
+	// Cache settings
 	$form['cache_settings'] = array(
 		'#type' => 'fieldset',
-		'#title' => t('Ting term list cache settings'),
+		'#title' => t('Cache settings'),
 		'#tree' => FALSE,
 	);
 	$options = array();
@@ -54,19 +55,52 @@ function ting_term_list_admin_form($form, &$form_state) {
 	$form['cache_settings']['ting_term_list_cache_lifetime'] = array(
 		'#type' => 'select',
 		'#title' => t('Cache lifetime'),
-		'#description' => t('Select the amount of time term lists should be cahced'),
+		'#description' => t('Select the amount of time term lists should be cached'),
 		'#default_value' => variable_get('ting_term_list_cache_lifetime', 
 			TING_TERM_LIST_DEFAULT_CACHE_LIFETIME),
 		'#options' => $options,
 	);
+	$options = array();
+	for ($i = 1; $i <= 12; $i++) {
+		$amount = $i * 5;
+		$options[$amount] = $amount;
+	}
 	$form['cache_settings']['ting_term_list_cache_amount'] = array(
-		'#type' => 'select'
+		'#type' => 'select',
+		'#title' => t('Cache amount'),
+		'#description' => t('Select the max amount of term lists to cache on nightly cron jobs'),
+		'#default_value' => variable_get('ting_term_list_cache_amount',
+			TING_TERM_LIST_DEFAULT_CACHE_AMOUNT),
+		'#options' => $options,
+	);
+
+	// Cache history table
+	$header = array(
+		array('data' => t('ID'), 'field' => 'n.nid'),
+		array('data' => t('Title'), 'field' => 'n.title'),
+		array('data' => t('Time'), 'field' => 'chttl.time'),
+	);
+	$query = db_select('node', 'n')->extend('TableSort');
+	$query->join('cache_history_ting_term_list', 'chttl', 'n.nid = chttl.nid');
+	$query->addField('n', 'nid', 'nid');
+	$query->addField('n', 'title', 'title');
+	$query->addField('chttl', 'time', 'time');
+	$result = $query->orderByHeader($header)->execute();
+	$rows = array();
+	foreach ($result as $row) {
+		$rows[] = array('data' => (array) $row);
+	}
+	$table = array(
+		'#theme' => 'table',
+		'#header' => $header,
+		'#rows' => $rows,	
 	);
 	$form['cache_history'] = array(
 		'#type' => 'fieldset',
-		'#title' => t('Ting term list cache history'),
+		'#title' => t('Cache history'),
 		'#tree' => FALSE,
 	);
+	$form['cache_history']['cache_history_table'] = $table;
 	return system_settings_form($form);
 }
 
@@ -113,7 +147,8 @@ function ting_term_list_cron() {
 			$query = db_select('cache_ting_term_list', 'cttl');
 			$query->addField('cttl', 'cid', 'cid');
 			$query->orderBy('cttl.created', 'ASC');
-			$query->range(0, TING_TERM_LIST_CACHE_AMOUNT);
+			$query->range(0, variable_get('ting_term_list_cache_amount', 
+				TING_TERM_LIST_DEFAULT_CACHE_AMOUNT));
 			$result = $query->execute();
 			foreach ($result as $record) {
 				$cid_array = explode(':', $record->cid);
@@ -260,7 +295,8 @@ function _ting_term_list_add_css($column_count) {
 	$css = "div#ting-term-list div.ting-term-list-column { width: $column_width; }";
 	drupal_add_css($css, $css_options);
 	$css_options['type'] = 'file';
-	drupal_add_css(TING_TERM_LIST_PATH . '/ting_term_list_style.css', $css_options);
+	$module_path = drupal_get_path('module', 'ting_term_list');
+	drupal_add_css($module_path . '/ting_term_list_style.css', $css_options);
 }
 
 /**
@@ -272,7 +308,7 @@ function _ting_term_list_add_css($column_count) {
  */
 function ting_term_list_get_terms($node) {
 	// Check the cache first.
-	$cache = cache_get('ting_term_list:' . $node->nid, TING_TERM_LIST_CACHE_TABLE);
+	$cache = cache_get('ting_term_list:' . $node->nid, 'cache_ting_term_list');
 	if ($cache && ($cache->expire > REQUEST_TIME)) {
 		$terms = $cache->data;
 	}
@@ -297,8 +333,10 @@ function ting_term_list_set_cache($node) {
 	$terms = ting_term_list_search_terms($term_query, $term_count);
 	$cid = 'ting_term_list:' . $node->nid;
 	// Convert the expiration time from days to seconds.
-	$expiration_time = time() + (TING_TERM_LIST_CACHE_LIFETIME * 24 * 60 * 60);
-	cache_set($cid, $terms, TING_TERM_LIST_CACHE_TABLE, $expiration_time);
+	$cache_lifetime = variable_get('ting_term_list_cache_lifetime', 
+		TING_TERM_LIST_DEFAULT_CACHE_LIFETIME);
+	$expiration_time = time() + ($cache_lifetime * 24 * 60 * 60);
+	cache_set($cid, $terms, 'cache_ting_term_list', $expiration_time);
 	return $terms;			
 }
 
