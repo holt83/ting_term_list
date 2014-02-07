@@ -32,6 +32,12 @@ function ting_term_list_schema() {
 			),
 		),
 		'primary key' => array('nid', 'time'),
+		'foreign keys' => array(
+			'node' => array(
+				'table' => 'node',
+				'columns' => array('nid' => 'nid'),
+			),
+		), 
 		'indexes' => array(
 			'time' => array('time'),
 		),
