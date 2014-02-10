@@ -105,14 +105,18 @@ function ting_term_list_admin_form($form, &$form_state) {
 }
 
 /**
- * Tezt!!
+ * Testing
  */
 function ting_term_list_init() {
-	//$hour = date('G');
-	//$now = time();
-	//$day_of_month = date('j', $now);
-	
-	// file_put_contents("/home/drupalpro/debug/debug.txt", print_r($day_of_month , TRUE), FILE_APPEND);
+	/*$month = date('n');
+	$day = date('j');
+	$year = date('Y');
+	$midnight_time = mktime(0, 0, 0, $month, $day + 1, $year);		
+	$query = db_select('cache_history_ting_term_list', 'chttl')
+		->fields('chttl', array('nid', 'time'))
+		->condition('time', $midnight_time, '>=');
+	$cache_history_count = $query->countQuery()->execute()->fetchField();
+	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($cache_history_count , TRUE), FILE_APPEND);*/
 }
 
 /**
@@ -120,43 +124,38 @@ function ting_term_list_init() {
  */
 function ting_term_list_cron() {
 	// We only want to update the cache once a night between 00:00 and 06:00.
-	$current_hour = 2;//date('G');
-	if ($current_hour >= 0 && $current_hour <= 6) {
-		// Remove any cache history records not from the current day.
-		$current_day = date('j');
-		$query = db_select('cache_history_ting_term_list', 'chttl');
-		$query->addField('chttl', 'nid', 'nid');
-		$query->addFIeld('chttl', 'time', 'time');			
-		$result = $query->execute();
-		foreach ($result as $record) {
-			$day = date('j', $record->time);
-			if ($day != $current_day) {
-				$query_delete = db_delete('cache_history_ting_term_list')
-				  ->condition('nid', $record->nid)
-				  ->condition('time', $record->time);
-				$query_delete->execute();				
-			}
-		}
-		$query = db_select('cache_history_ting_term_list', 'chttl');
+	$hour = 2;//date('G');
+	if ($hour >= 0 && $hour <= 6) {
+		// Check to see if tonights updates already have been run.
+		$month = date('n');
+		$day = date('j');
+		$year = date('Y');
+		$midnight_time = mktime(0, 0, 0, $month, $day, $year);		
+		$query = db_select('cache_history_ting_term_list', 'chttl')
+			->fields('chttl', array('nid', 'time'))
+			->condition('time', $midnight_time, '>=');
 		$cache_history_count = $query->countQuery()->execute()->fetchField();
 		$queue = DrupalQueue::get('ting_term_list_cache_queue');
-		// If there is no records in the cache history and there is no items in 
-		// the queue, tonights updates hasn't been run. In this case we go ahead 
-		// and start tonights cache updates. 
+		// If there was no cache updates for tonight in the history and the queue
+		// is empty, we go ahead and start tonights updates. 
 		if ($cache_history_count == 0 && $queue->numberOfItems() == 0) {
-			$query = db_select('cache_ting_term_list', 'cttl');
-			$query->addField('cttl', 'cid', 'cid');
-			$query->orderBy('cttl.created', 'ASC');
-			$query->range(0, variable_get('ting_term_list_cache_amount', 
-				TING_TERM_LIST_DEFAULT_CACHE_AMOUNT));
+			$cache_amount = _ting_term_list_get_cache_amount();
+			$query = db_select('cache_ting_term_list', 'cttl')
+			  ->fields('cttl', array('cid', 'created'))
+			  ->orderBy('created', 'ASC')
+			  ->range(0, $cache_amount);
 			$result = $query->execute();
 			foreach ($result as $record) {
-				$cid_array = explode(':', $record->cid);
-				$nid = $cid_array[1];
+				$nid = _ting_term_list_get_nid_from_cid($record->cid);
 				$node = node_load($nid);
 				$queue->createItem($node);
 			}
-		}	
+		}
+		// Clean up old rows from the history table.
+		$history_treshold = time() - (30 * 24 * 3600);
+		$query = db_delete('cache_history_ting_term_list')
+			->condition('time', $history_treshold, '<');
+		$delete_count = $query->execute();
 	}
 }
 
@@ -331,11 +330,9 @@ function ting_term_list_set_cache($node) {
 	$term_count = ting_term_list_get_field_value($node, 'field_term_list_term_count');
 	// Search the well for terms
 	$terms = ting_term_list_search_terms($term_query, $term_count);
-	$cid = 'ting_term_list:' . $node->nid;
-	// Convert the expiration time from days to seconds.
-	$cache_lifetime = variable_get('ting_term_list_cache_lifetime', 
-		TING_TERM_LIST_DEFAULT_CACHE_LIFETIME);
-	$expiration_time = time() + ($cache_lifetime * 24 * 60 * 60);
+	$cid = _ting_term_list_get_cid_from_nid($node->nid);
+	// Caculate the expiration time for the cache.
+	$expiration_time = time() + _ting_term_list_get_cache_lifetime();
 	cache_set($cid, $terms, 'cache_ting_term_list', $expiration_time);
 	return $terms;			
 }
@@ -386,4 +383,36 @@ function ting_term_list_get_field_value($node, $field_name) {
 		return $value['value'];
 	}
 	return FALSE;
+}
+
+/**
+ * Helper function to get cid from nid.
+ */
+function _ting_term_list_get_cid_from_nid($nid) {
+	return 'ting_term_list:' . $nid;
+}
+
+/**
+ * Helper function to get nid from cid.
+ */
+function _ting_term_list_get_nid_from_cid($cid) {
+	$cid_explode = explode(':', $cid);
+	return (isset($cid_explode[1]) ? $cid_explode[1] : 0);
+}
+
+/**
+ * Helper function to fetch cache lifetime from the database.
+ */
+function _ting_term_list_get_cache_lifetime() {
+	$cache_lifetime = variable_get('ting_term_list_cache_lifetime', 
+		TING_TERM_LIST_DEFAULT_CACHE_AMOUNT);
+	return ($cache_lifetime * 24 * 60 * 60);
+}
+
+/**
+ * Helper function to fetch cache amount from the database.
+ */
+function _ting_term_list_get_cache_amount() {
+  return variable_get('ting_term_list_cache_amount', 
+  	TING_TERM_LIST_DEFAULT_CACHE_AMOUNT);
 }
