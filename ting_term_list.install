@@ -15,7 +15,7 @@ function ting_term_list_schema() {
 	$schema = array();
 	$schema['cache_ting_term_list'] = drupal_get_schema_unprocessed('system', 'cache');
 	$schema['cache_history_ting_term_list'] = array(
-		'description' => 'Keeps track of nightly updates to the term list cache',
+		'description' => 'Keeps track of nightly cache updates of term lists',
 		'fields' => array(
 			'nid' => array(
 				'description' => 'The ID of the term list node that was cached',

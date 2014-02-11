@@ -85,6 +85,7 @@ function ting_term_list_admin_form($form, &$form_state) {
 	$query->addField('n', 'nid', 'nid');
 	$query->addField('n', 'title', 'title');
 	$query->addField('chttl', 'time', 'time');
+	$query->orderBy('time', 'DESC');
 	$result = $query->orderByHeader($header)->execute();
 	$rows = array();
 	foreach ($result as $row) {
@@ -108,15 +109,7 @@ function ting_term_list_admin_form($form, &$form_state) {
  * Testing
  */
 function ting_term_list_init() {
-	/*$month = date('n');
-	$day = date('j');
-	$year = date('Y');
-	$midnight_time = mktime(0, 0, 0, $month, $day + 1, $year);		
-	$query = db_select('cache_history_ting_term_list', 'chttl')
-		->fields('chttl', array('nid', 'time'))
-		->condition('time', $midnight_time, '>=');
-	$cache_history_count = $query->countQuery()->execute()->fetchField();
-	file_put_contents("/home/drupalpro/debug/debug.txt", print_r($cache_history_count , TRUE), FILE_APPEND);*/
+	// file_put_contents("/home/drupalpro/debug/debug.txt", print_r($cache_history_count , TRUE), FILE_APPEND);*/
 }
 
 /**
@@ -182,7 +175,7 @@ function ting_term_list_cron_worker_callback($node) {
 		'nid' => $node->nid,
 		'time' => time(),
 	));
-	return $query->execute();
+	$query->execute();
 }
 
 /**
@@ -307,7 +300,8 @@ function _ting_term_list_add_css($column_count) {
  */
 function ting_term_list_get_terms($node) {
 	// Check the cache first.
-	$cache = cache_get('ting_term_list:' . $node->nid, 'cache_ting_term_list');
+	$cid = _ting_term_list_get_cid_from_nid($node->nid);
+	$cache = cache_get($cid, 'cache_ting_term_list');
 	if ($cache && ($cache->expire > REQUEST_TIME)) {
 		$terms = $cache->data;
 	}
