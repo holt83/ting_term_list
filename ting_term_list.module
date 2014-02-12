@@ -109,7 +109,7 @@ function ting_term_list_admin_form($form, &$form_state) {
  * Testing
  */
 function ting_term_list_init() {
-	// file_put_contents("/home/drupalpro/debug/debug.txt", print_r($cache_history_count , TRUE), FILE_APPEND);*/
+	// file_put_contents("/home/drupalpro/debug/debug.txt", print_r($test , TRUE), FILE_APPEND);
 }
 
 /**
@@ -117,7 +117,7 @@ function ting_term_list_init() {
  */
 function ting_term_list_cron() {
 	// We only want to update the cache once a night between 00:00 and 06:00.
-	$hour = 2;//date('G');
+	$hour = 2; // date('G');
 	if ($hour >= 0 && $hour <= 6) {
 		// Check to see if tonights updates already have been run.
 		$month = date('n');
