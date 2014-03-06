@@ -76,9 +76,9 @@ function ting_term_list_admin_form($form, &$form_state) {
 
 	// Cache history table
 	$header = array(
-		array('data' => t('ID'), 'field' => 'n.nid'),
-		array('data' => t('Title'), 'field' => 'n.title'),
-		array('data' => t('Time'), 'field' => 'chttl.time'),
+		'nid' => array('data' => t('ID'), 'field' => 'n.nid'),
+		'title' => array('data' => t('Title'), 'field' => 'n.title'),
+		'time' => array('data' => t('Time'), 'field' => 'chttl.time'),
 	);
 	$query = db_select('node', 'n')->extend('TableSort');
 	$query->join('cache_history_ting_term_list', 'chttl', 'n.nid = chttl.nid');
@@ -89,7 +89,13 @@ function ting_term_list_admin_form($form, &$form_state) {
 	$result = $query->orderByHeader($header)->execute();
 	$rows = array();
 	foreach ($result as $row) {
-		$rows[] = array('data' => (array) $row);
+		$row = (array) $row;
+		$time = date('d-m-Y H:i:s', $row['time']);
+		$rows[] = array(
+			'nid' => $row['nid'],
+			'title' => check_plain($row['title']),
+			'time' => $time,
+		);
 	}
 	$table = array(
 		'#theme' => 'table',
@@ -106,18 +112,11 @@ function ting_term_list_admin_form($form, &$form_state) {
 }
 
 /**
- * Testing
- */
-function ting_term_list_init() {
-	// file_put_contents("/home/drupalpro/debug/debug.txt", print_r($test , TRUE), FILE_APPEND);
-}
-
-/**
  * Implements hook_cron().
  */
 function ting_term_list_cron() {
 	// We only want to update the cache once a night between 00:00 and 06:00.
-	$hour = 2; // date('G');
+	$hour = date('G');
 	if ($hour >= 0 && $hour <= 6) {
 		// Check to see if tonights updates already have been run.
 		$month = date('n');
@@ -368,7 +367,7 @@ function ting_term_list_search_terms($term_query, $term_count) {
 }
 
 /**
- * Gets the values from the specified field on the specified node.
+ * Gets the value from the specified field on the specified node.
  */
 function ting_term_list_get_field_value($node, $field_name) {
 	if (isset($node->{$field_name}) && !empty($node->{$field_name})) {
