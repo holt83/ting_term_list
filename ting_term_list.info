@@ -5,6 +5,9 @@ package = Ding!
 php = 5.2.4
 version = 7.x-1.1
 project = ting_term_list
+
+files[] = ting_term_list.module
+
 dependencies[] = ctools
 dependencies[] = ding_frontend
 dependencies[] = features
@@ -17,6 +20,7 @@ dependencies[] = panels
 dependencies[] = strongarm
 dependencies[] = text
 dependencies[] = ting
+
 features[ctools][] = page_manager:pages_default:1
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:1
@@ -42,9 +46,4 @@ features[variable][] = menu_parent_ting_term_list
 features[variable][] = node_options_ting_term_list
 features[variable][] = node_preview_ting_term_list
 features[variable][] = node_submitted_ting_term_list
-features_exclude[field][node-ting_term_list-field_term_list_term_cat] = node-ting_term_list-field_term_list_term_cat
-features_exclude[field][node-ting_term_list-field_term_list_term_count] = node-ting_term_list-field_term_list_term_count
-features_exclude[field][node-ting_term_list-field_term_list_column_count] = node-ting_term_list-field_term_list_column_count
-features_exclude[field][node-ting_term_list-field_term_list_term_query] = node-ting_term_list-field_term_list_term_query
-files[] = ting_term_list.module
-project path = sites/all/modules
+
