@@ -359,9 +359,8 @@ function ting_term_list_search_terms($term_query, $term_count) {
 	}
 	// Use facet.subject to get terms
 	$request->setFacets(array('facet.subject'));
-	// Set the number of subjects to return
+	// Set the number of terms to return
 	$request->setNumFacets($term_count);
-	// Get the terms from search result object
 	$search_result = ting_execute($request);
 	$terms = array();
 	if (isset($search_result->facets)) {
