@@ -122,26 +122,32 @@ function ting_term_list_cron() {
 		$month = date('n');
 		$day = date('j');
 		$year = date('Y');
-		$midnight_time = mktime(0, 0, 0, $month, $day, $year);		
-		$query = db_select('cache_history_ting_term_list', 'chttl')
-			->fields('chttl', array('nid', 'time'))
-			->condition('time', $midnight_time, '>=');
-		$cache_history_count = $query->countQuery()->execute()->fetchField();
-		$queue = DrupalQueue::get('ting_term_list_cache_queue');
-		// If there was no cache updates for tonight in the history and the queue
-		// is empty, we go ahead and start tonights updates. 
-		if ($cache_history_count == 0 && $queue->numberOfItems() == 0) {
-			$cache_amount = _ting_term_list_get_cache_amount();
-			$query = db_select('cache_ting_term_list', 'cttl')
-			  ->fields('cttl', array('cid', 'created'))
-			  ->orderBy('created', 'ASC')
-			  ->range(0, $cache_amount);
-			$result = $query->execute();
-			foreach ($result as $record) {
-				$nid = _ting_term_list_get_nid_from_cid($record->cid);
-				$node = node_load($nid);
-				$queue->createItem($node);
+		$midnight_time = mktime(0, 0, 0, $month, $day, $year);
+		$transaction = db_transaction();
+		try {
+			$query = db_select('cache_history_ting_term_list', 'chttl')
+				->fields('chttl', array('nid', 'time'))
+				->condition('time', $midnight_time, '>=');
+			$cache_history_count = $query->countQuery()->execute()->fetchField();
+			// If there was no cache updates for tonight in the history and the queue
+			// is empty, we go ahead and start tonights updates. 
+			if ($cache_history_count == 0) {
+				$queue = DrupalQueue::get('ting_term_list_cache_queue');
+				$cache_amount = _ting_term_list_get_cache_amount();
+				$query = db_select('cache_ting_term_list', 'cttl')
+				  ->fields('cttl', array('cid', 'created'))
+				  ->orderBy('created', 'ASC')
+				  ->range(0, $cache_amount);
+				$result = $query->execute();
+				foreach ($result as $record) {
+					$nid = _ting_term_list_get_nid_from_cid($record->cid);
+					$node = node_load($nid);
+					$queue->createItem($node);
+				}
 			}
+		}
+		catch (Exception $e) {
+			$transaction->rollback();
 		}
 		// Clean up old rows from the history table.
 		$history_treshold = time() - (30 * 24 * 3600);
